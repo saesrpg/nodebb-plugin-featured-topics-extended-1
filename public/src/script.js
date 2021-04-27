@@ -2,41 +2,41 @@ $(() => {
   config.fte = {}
 
   app.loadJQueryUI(() => {
-    function openModal (theirid, lists) {
+    async function openModal (theirid, lists) {
       const {tid, title} = ajaxify.data
 
       if (!tid) return console.log('No tid for featured topic modal.')
 
-      templates.parse('modals/fte-listselect', {lists, title}, (html) => {
-        bootbox.dialog({
-          size: 'large',
-          title: `Featuring topic: "${title}"`,
-          message: html,
-          show: true,
-          onEscape: true,
-          buttons: {
-            'cancel': {
-              label: 'Cancel',
-              className: 'btn-primary',
-              callback: () => {}
-            },
-            'accept': {
-              label: 'Add Topic',
-              className: 'btn-default',
-              callback: () => {
-                socket.emit('plugins.FeaturedTopicsExtended.featureTopic', {
-                  tid,
-                  theirid,
-                  slug: $('#fte-topic-list-select').val()
-                }, err => {
-                  if (err) return app.alertError(err.message)
+      const benchpress = require('benchpress')
 
-                  app.alertSuccess('Featured Topic')
-                })
-              }
+      bootbox.dialog({
+        size: 'large',
+        title: `Featuring topic: "${title}"`,
+        message: await benchpress.render('modals/fte-listselect', { lists, title }),
+        show: true,
+        onEscape: true,
+        buttons: {
+          'cancel': {
+            label: 'Cancel',
+            className: 'btn-primary',
+            callback: () => {}
+          },
+          'accept': {
+            label: 'Add Topic',
+            className: 'btn-default',
+            callback: () => {
+              socket.emit('plugins.FeaturedTopicsExtended.featureTopic', {
+                tid,
+                theirid,
+                slug: $('#fte-topic-list-select').val()
+              }, err => {
+                if (err) return app.alertError(err.message)
+
+                app.alertSuccess('Featured Topic')
+              })
             }
           }
-        })
+        }
       })
     }
 
@@ -154,7 +154,7 @@ $(() => {
 
         socket.emit('plugins.FeaturedTopicsExtended.getFeaturedTopics', {theirid, slug, page}, (err, data) => {
           if (err) return app.alertError(err.message)
-          if (!data || !data.topics || !data.topics.length) return
+          if (!data || !data.topics) return
 
           app.parseAndTranslate('partials/fte-topic-list', {topics: data.topics, isSelf: ajaxify.data.isSelf}, html => {
             $('.fte-topic-list').html(html)
